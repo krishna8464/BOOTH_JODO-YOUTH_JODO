@@ -35,6 +35,7 @@ exports.getMembers = async (req, res) => {
 
 // update member by id
 exports.updateMemberbyId = async (req, res) => {
+    console.log(req.body)
     let id = req.body.venderId;
     let ID = req.params["id"];
     let updateData = req.body;
@@ -42,12 +43,11 @@ exports.updateMemberbyId = async (req, res) => {
     let role = vender.ROLE
     let wherecondition
     if( role === "Admin"){
-        wherecondition = { id: ID };
+        wherecondition = { id : ID };
     }else{
-        wherecondition = { id: ID , VENDER_ID : id }
+        wherecondition = { id : ID , VENDER_ID : id }
     }
 
-    
     try {
         let user = await BJYJMEMBER.findOne({ where: wherecondition });
 
@@ -197,6 +197,8 @@ exports.searchMemberForVender = async (req, res) => {
     const key = req.params["key"];
     const value = req.params["value"];
     const venderId = req.body.venderId;
+    const page = req.params["page"] || 1;
+    const limit = 100;
 
     try {
         // Validate that key is a valid column name to prevent SQL injection
@@ -214,6 +216,8 @@ exports.searchMemberForVender = async (req, res) => {
         const stateCode = vender.ASSIGN_STATE_CODE;
         const lowerCaseValue = value.toLowerCase(); // Convert the query value to lowercase
 
+        const offset = (page - 1) * limit;
+
         const user = await BJYJMEMBER.findAndCountAll({
             where: {
                 [Op.and]: [
@@ -224,10 +228,13 @@ exports.searchMemberForVender = async (req, res) => {
                     { VENDER_ID: venderId, state_code: stateCode },
                 ],
             },
+            offset,
+            limit,
         });
 
         if (user.rows.length > 0) {
-            res.status(200).json({ success: user });
+            const totalPages = Math.ceil(user.count / limit);
+            res.status(200).json({ success: user});
         } else {
             res.status(404).json({ message: "No matching records found" });
         }
@@ -236,6 +243,7 @@ exports.searchMemberForVender = async (req, res) => {
         res.status(500).json({ error: "Something went wrong in the searchMemberForVender route" });
     }
 };
+
 
 // This is used by admin to search the members which are assigned
 exports.adminFindMember = async (req, res) => {

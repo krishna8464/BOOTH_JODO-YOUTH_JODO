@@ -141,9 +141,8 @@ const BJYJMEMBER = sequelize.define('BJYJ_MEMBER_TABLE', {
   },
   VENDER_REASON: {
     type: DataTypes.STRING,
-    allowNull: true, 
+    allowNull: false, 
     defaultValue: '', 
-    
   },
 }, {
   tableName: 'BJYJ_MEMBER_TABLE',

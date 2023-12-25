@@ -23,7 +23,7 @@ Memberroute.post("/filter/:key/:value/:status/:venderStatus/:page" , authMiddlew
 
 Memberroute.post("/getMemberstaticts/:state_code" , authMiddleware , getMemberstaticts);
 
-Memberroute.post("/searchMemberforvender/:key/:value" , authMiddleware , searchMemberForVender );
+Memberroute.post("/searchMemberforvender/:key/:value/:page" , authMiddleware , searchMemberForVender );
 
 Memberroute.post("/adminFindMember/:key/:value/:page" , authMiddleware , adminFindMember)
 
