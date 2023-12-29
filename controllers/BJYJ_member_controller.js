@@ -47,18 +47,20 @@ exports.updateMemberbyId = async (req, res) => {
     }else{
         wherecondition = { id : ID , VENDER_ID : id }
     }
+    delete req.body.venderId;
 
     try {
         let user = await BJYJMEMBER.findOne({ where: wherecondition });
 
         if(user){
+
             let updated = await BJYJMEMBER.update(updateData, { where: wherecondition });
 
         if (updated[0] === 1) {
-            let user = await BJYJMEMBER.findOne({ where: wherecondition });
+            let user = await BJYJMEMBER.findByPk(ID);
             res.status(200).json({ success: user });
         } else {
-            res.status(404).json({ error: "No Member found with the provided ID" });
+            res.status(404).json({ error: "No Changes done for update" });
         }
         }else{
             res.status(404).json({ error: "No Member found with the provided ID or not assigned to this Vender" });
@@ -175,14 +177,36 @@ exports.getMemberstaticts = async (req, res) => {
         const VERIFICATION_FAILED_COUNT = await BJYJMEMBER.count({
             where: { VENDER_STATUS: "VERIFICATION_FAILED", state_code: state_code },
         });
-        const TOTAL_MEMBER_COUNT = await BJYJMEMBER.count({ where: { state_code: state_code } });
+        const TOTAL_MEMBER_COUNT = await BJYJMEMBER.count({ where : { state_code: state_code }});
+
+        const TOTAL_RECORDS_NOT_ASSIGNED_COUNT = await BJYJMEMBER.count({ 
+            where : { state_code: state_code , VENDER_ID : 0 }
+        });
+
+        const TOTAL_RECORDS_ASSIGNED_COUNT = await BJYJMEMBER.count({
+            where: { state_code: state_code, VENDER_ID: { [Op.ne]: 0 } },
+          });
+
+        const VENDER_ACTIVE_COUNT = await Vender.count({ where : { STATUS : "ACTIVE" } });
+
+        const VENDER_INACTIVE_COUNT = await Vender.count({ where : { STATUS : "INACTIVE" } });
+
+        const VENDER_ONLINE_COUNT = await Vender.count({ where : { LOGIN_STATUS : "ONLINE" } });
+
+        const VENDER_OFFLINE_COUNT = await Vender.count({ where : { LOGIN_STATUS : "OFFLINE" } });
 
         let resobj = {
+            TOTAL_RECORDS_ASSIGNED_COUNT,
+            TOTAL_RECORDS_NOT_ASSIGNED_COUNT,
             TOTAL_VERIFIED_COUNT,
             VERIFICATION_PASS_COUNT,
             VERIFICATION_FAILED_COUNT,
             VERIFICATION_PENDING_COUNT,
             TOTAL_MEMBER_COUNT,
+            VENDER_ACTIVE_COUNT,
+            VENDER_INACTIVE_COUNT,
+            VENDER_ONLINE_COUNT,
+            VENDER_OFFLINE_COUNT
         };
 
         res.status(200).json({ success: resobj });
@@ -247,52 +271,66 @@ exports.searchMemberForVender = async (req, res) => {
 
 // This is used by admin to search the members which are assigned
 exports.adminFindMember = async (req, res) => {
+    let id = req.params["vender_id"];
+    let ID = req.body.venderId
+    let vender = await Vender.findByPk(ID);
     const key = req.params["key"];
     const value = req.params["value"];
-    const venderId = req.body.venderId;
-    const page = req.params["page"] || 1;
-    const pageSize = 20; // Adjust the page size as needed
+    const venderStatus = req.params["venderStatus"];
+    const state_code = vender.ASSIGN_STATE_CODE;
+    const status = req.params['status'];
+    const page = req.params['page'];
+  
+   const whereConditions = {};
+   whereConditions.state_code = state_code;
+   if(id !== "0"){
+   whereConditions.VENDER_ID = id
+   }
 
+   if(status != "0"){
+    whereConditions.status = status;
+   };
+
+   if(venderStatus != "empty"){
+    whereConditions.VENDER_STATUS = venderStatus
+   };
+//   console.log(whereConditions)
     try {
-        // Validate that key is a valid column name to prevent SQL injection
-        const validColumns = ["yuva_user_id", "state_code", "age", "year", "name", "mobile"];
-        if (!validColumns.includes(key)) {
-            return res.status(400).json({ error: "Invalid search key" });
+        if(key === "0" && value === "0"){
+            // console.log(whereConditions)
+            const limit = 100;
+            const offset = (page - 1) * limit;
+            const userRecords = await BJYJMEMBER.findAndCountAll({
+              where: whereConditions,
+              limit: limit,
+              offset: offset,
+            });
+            res.status(200).json({success : userRecords});
+        }else{
+            const limit = 100;
+            const offset = (page - 1) * limit;
+            const lowerCaseValue = value.toLowerCase(); // Convert the query value to lowercase
+            const records = await BJYJMEMBER.findAndCountAll({
+                where: {
+                  ...whereConditions,
+                  [Op.or]: [
+                    sequelize.where(sequelize.fn("LOWER", sequelize.col(key)), lowerCaseValue),
+                    {
+                      [key]: {
+                        [Op.regexp]: `.*${lowerCaseValue}.*`,
+                      },
+                    },
+                  ],
+                },
+                limit: limit,
+                offset: offset,
+              });
+              res.status(200).json({success : records});
         }
-
-        const vender = await Vender.findByPk(venderId);
-
-        if (!vender) {
-            return res.status(404).json({ error: "Vender not found" });
-        }
-
-        const stateCode = vender.ASSIGN_STATE_CODE;
-        const lowerCaseValue = value.toLowerCase(); // Convert the query value to lowercase
-
-        const offset = (page - 1) * pageSize;
-
-        const user = await BJYJMEMBER.findAndCountAll({
-            where: {
-                [Op.and]: [
-                    sequelize.where(
-                        sequelize.fn("LOWER", sequelize.col(key)),
-                        { [Op.like]: `%${lowerCaseValue}%` }
-                    ),
-                    {state_code: stateCode },
-                ],
-            },
-            limit: pageSize,
-            offset: offset,
-        });
-
-        if (user.rows.length > 0) {
-            res.status(200).json({ success: user });
-        } else {
-            res.status(404).json({ message: "No matching records found" });
-        }
+  
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Something went wrong in the searchMemberForVender route" });
+        console.log(error)
+        res.status(500).json({error : "filter route is not functioning"});
     }
 };
 

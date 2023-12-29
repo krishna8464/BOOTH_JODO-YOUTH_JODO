@@ -4,6 +4,7 @@ const { VenderHistory } = require("../models/vender_history_table_model");
 const { BJYJMEMBER } = require("../models/BJYJ_member_model");
 const { atob } = require('atob');
 const { Op } = require('sequelize');
+const { sequelize } = require("../config/db");
 const axios = require("axios");
 const moment = require('moment-timezone');
 const jwt = require('jsonwebtoken');
@@ -411,6 +412,45 @@ exports.getallVenders = async (req, res) => {
       order: [['ROLE', 'DESC']],
     });
 
+    for (const vender of venders.rows) {
+      const VENDER_ID = vender.ID;
+
+      // Count verification pass records
+      const VERIFICATION_PASS_COUNT = await BJYJMEMBER.count({
+        where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_PASS", state_code: state_code },
+      });
+
+      // Count verification failed records
+      const VERIFICATION_FAILED_COUNT = await BJYJMEMBER.count({
+        where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_FAILED", state_code: state_code },
+      });
+
+      // Count total verified records
+      const TOTAL_VERIFIED_COUNT = await BJYJMEMBER.count({
+        where: {
+          [Op.or]: [{ VENDER_STATUS: "VERIFICATION_PASS" }, { VENDER_STATUS: "VERIFICATION_FAILED" }],
+          state_code: state_code,
+          VENDER_ID,
+        },
+      });
+
+      // Count verification pending records
+      const VERIFICATION_PENDING_COUNT = await BJYJMEMBER.count({
+        where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_PENDING", state_code: state_code },
+      });
+
+      const plainVender = vender.get({ plain: true });
+
+      plainVender.VERIFICATION_PASS_COUNT = VERIFICATION_PASS_COUNT;
+      plainVender.VERIFICATION_FAILED_COUNT = VERIFICATION_FAILED_COUNT;
+      plainVender.TOTAL_VERIFIED_COUNT = TOTAL_VERIFIED_COUNT;
+      plainVender.VERIFICATION_PENDING_COUNT = VERIFICATION_PENDING_COUNT;
+      plainVender.TOTAL_ASSIGNED_COUNT = TOTAL_VERIFIED_COUNT + VERIFICATION_PENDING_COUNT;
+
+      vender.set(plainVender);
+    }
+    // console.log(venders)
+
     res.status(201).json({success : venders});
   } catch (error) {
     console.log(error)
@@ -757,4 +797,192 @@ exports.getStatisticsbyvenderauth = async (req, res) => {
     res.status(500).json({ error: "Something went wrong with the getStatisticsbyvenderid route" });
   }
 };
+
+// filter vender route
+exports.filterforvender = async(req,res)=>{
+  let id = req.body.venderId;
+  let vender = await Vender.findByPk(id);
+  const key = req.params["key"];
+  const value = req.params["value"];
+  const role = req.params["role"];
+  const loginstatus = req.params["loginstatus"];
+  const state_code = vender.ASSIGN_STATE_CODE;
+  const status = req.params['status'];
+  const page = req.params['page'] || 1;
+
+ const whereConditions = {};
+ whereConditions.ASSIGN_STATE_CODE = state_code;
+
+ if(status != "0"){
+  whereConditions.STATUS = status;
+ };
+
+ if(role != "0"){
+  whereConditions.ROLE = role
+ };
+
+ if(loginstatus != "0"){
+  whereConditions.LOGIN_STATUS = loginstatus
+ };
+
+  try {
+      if(key === "0" && value === "0"){
+          const limit = 100;
+          const offset = (page - 1) * limit;
+          const userRecords = await Vender.findAndCountAll({
+            where: whereConditions,
+            limit: limit,
+            offset: offset,
+          });
+          for (const vender of userRecords.rows) {
+               
+            const VENDER_ID = vender.ID;
+      
+            // Count verification pass records
+            const VERIFICATION_PASS_COUNT = await BJYJMEMBER.count({
+              where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_PASS", state_code: state_code },
+            });
+      
+            // Count verification failed records
+            const VERIFICATION_FAILED_COUNT = await BJYJMEMBER.count({
+              where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_FAILED", state_code: state_code },
+            });
+      
+            // Count total verified records
+            const TOTAL_VERIFIED_COUNT = await BJYJMEMBER.count({
+              where: {
+                [Op.or]: [{ VENDER_STATUS: "VERIFICATION_PASS" }, { VENDER_STATUS: "VERIFICATION_FAILED" }],
+                state_code: state_code,
+                VENDER_ID,
+              },
+            });
+            
+            // Count verification pending records
+            const VERIFICATION_PENDING_COUNT = await BJYJMEMBER.count({
+              where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_PENDING", state_code: state_code },
+            });
+      
+            const plainVender = vender.get({ plain: true });
+      
+            plainVender.VERIFICATION_PASS_COUNT = VERIFICATION_PASS_COUNT;
+            plainVender.VERIFICATION_FAILED_COUNT = VERIFICATION_FAILED_COUNT;
+            plainVender.TOTAL_VERIFIED_COUNT = TOTAL_VERIFIED_COUNT;
+            plainVender.VERIFICATION_PENDING_COUNT = VERIFICATION_PENDING_COUNT;
+            plainVender.TOTAL_ASSIGNED_COUNT = TOTAL_VERIFIED_COUNT + VERIFICATION_PENDING_COUNT;
+      
+            vender.set(plainVender);
+          }
+          res.status(200).json({success : userRecords});
+      }else{
+          const limit = 100;
+          const offset = (page - 1) * limit;
+          const lowerCaseValue = value.toLowerCase(); // Convert the query value to lowercase
+          const records = await Vender.findAndCountAll({
+              where: {
+                ...whereConditions,
+                [Op.or]: [
+                  sequelize.where(sequelize.fn("LOWER", sequelize.col(key)), lowerCaseValue),
+                  {
+                    [key]: {
+                      [Op.regexp]: `.*${lowerCaseValue}.*`,
+                    },
+                  },
+                ],
+              },
+              limit: limit,
+              offset: offset,
+            });
+
+            for (const vender of records.rows) {
+               
+              const VENDER_ID = vender.ID;
+        
+              // Count verification pass records
+              const VERIFICATION_PASS_COUNT = await BJYJMEMBER.count({
+                where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_PASS", state_code: state_code },
+              });
+        
+              // Count verification failed records
+              const VERIFICATION_FAILED_COUNT = await BJYJMEMBER.count({
+                where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_FAILED", state_code: state_code },
+              });
+        
+              // Count total verified records
+              const TOTAL_VERIFIED_COUNT = await BJYJMEMBER.count({
+                where: {
+                  [Op.or]: [{ VENDER_STATUS: "VERIFICATION_PASS" }, { VENDER_STATUS: "VERIFICATION_FAILED" }],
+                  state_code: state_code,
+                  VENDER_ID,
+                },
+              });
+              
+              // Count verification pending records
+              const VERIFICATION_PENDING_COUNT = await BJYJMEMBER.count({
+                where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_PENDING", state_code: state_code },
+              });
+        
+              const plainVender = vender.get({ plain: true });
+        
+              plainVender.VERIFICATION_PASS_COUNT = VERIFICATION_PASS_COUNT;
+              plainVender.VERIFICATION_FAILED_COUNT = VERIFICATION_FAILED_COUNT;
+              plainVender.TOTAL_VERIFIED_COUNT = TOTAL_VERIFIED_COUNT;
+              plainVender.VERIFICATION_PENDING_COUNT = VERIFICATION_PENDING_COUNT;
+              plainVender.TOTAL_ASSIGNED_COUNT = TOTAL_VERIFIED_COUNT + VERIFICATION_PENDING_COUNT;
+        
+              vender.set(plainVender);
+            }
+            res.status(200).json({success : records});
+      }
+
+  } catch (error) {
+      console.log(error)
+      res.status(500).json({error : "filter route is not functioning"});
+  }
+};
+
+// History filter get by admin id
+exports.Venderhistoryfilter = async ( req , res ) => {
+  console.log("came here")
+  try {
+    let id = req.body.venderId;
+  let vender = await Vender.findByPk(id);
+  const state_code = vender.ASSIGN_STATE_CODE;
+  const admin_id = req.params["admin_id"];
+  const action_type = req.params["action_type"];
+  const datefrom = req.params["datefrom"];
+  const dateto = req.params["dateto"];
+  const page = req.params['page'] || 1;
+
+  const whereConditions = {};
+  whereConditions.STATE_CODE = state_code;
+ 
+  if(admin_id !== "0"){
+    whereConditions.ADMIN_ID = admin_id;
+  }
+  if(action_type !== "0"){
+    whereConditions.ACTION_TYPE = action_type;
+  }
+  if(datefrom !== "0" && dateto !== "0" ){
+    const createdAtFilter = {
+      [Op.gte]: new Date(datefrom),
+      [Op.lte]: new Date(dateto + " 23:59:59"),
+    };
+    whereConditions.CREATED_ON = createdAtFilter;
+  }
+  console.log(whereConditions)
+
+  const venderHistory = await VenderHistory.findAndCountAll( {
+    where: whereConditions,
+    order: [['createdAt', 'DESC']],
+    offset: (page - 1) * 50, 
+    limit: 50, 
+  });
+
+  res.status(200).json({success : venderHistory});
+    
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({error : "filter route is not functioning"});
+  }
+}
 

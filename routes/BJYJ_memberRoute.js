@@ -25,7 +25,7 @@ Memberroute.post("/getMemberstaticts/:state_code" , authMiddleware , getMemberst
 
 Memberroute.post("/searchMemberforvender/:key/:value/:page" , authMiddleware , searchMemberForVender );
 
-Memberroute.post("/adminFindMember/:key/:value/:page" , authMiddleware , adminFindMember)
+Memberroute.post("/adminFindMember/:key/:value/:status/:venderStatus/:vender_id/:page" , authMiddleware , adminFindMember);
 
 
 

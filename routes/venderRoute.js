@@ -21,6 +21,8 @@ const {
     venderReport,
     getStatisticsbyvenderid,
     getStatisticsbyvenderauth,
+    filterforvender,
+    Venderhistoryfilter,
 } = require("../controllers/vendercontroller");
 
 Venderroute.post("/createVender" , createVender);
@@ -54,6 +56,10 @@ Venderroute.post("/venderReport/:state_code" , authMiddleware , venderReport);
 Venderroute.post("/getStatisticsbyvenderid/:venderid/:state_code" , authMiddleware , getStatisticsbyvenderid );
 
 Venderroute.post("/getStatisticsbyvenderauth/:state_code" , authMiddleware , getStatisticsbyvenderauth);
+
+Venderroute.post("/filterforvender/:key/:value/:status/:role/:loginstatus/:page" , authMiddleware , filterforvender );
+
+Venderroute.post("/Venderhistoryfilter/:admin_id/:action_type/:datefrom/:dateto/:page" , authMiddleware , Venderhistoryfilter);
 
 
 

@@ -89,6 +89,8 @@ const Vender = sequelize.define("VENDER_TABLE", {
       ],
   });
 
+
+
 sequelize.sync()
   .then(() => {
     console.log("Vender table Synced successfully");

@@ -3,7 +3,7 @@ const cors = require("cors");
 const fileUpload = require('express-fileupload');
 
 const app = express();
-const PORT = 6000;
+const PORT = 5000;
 
 const { Lsasmapping } = require("./routes/tbl_ls_as_mappingroute");
 const { Venderroute } = require("./routes/venderRoute");
@@ -12,6 +12,7 @@ const { sequelize } = require("./config/db");
 const { errorHandler } = require("./middleware/errorhandler");
 const { logger } = require("./middleware/logger");
 
+
 app.use(fileUpload());
 app.use(express.json());
 app.use(logger);
@@ -19,6 +20,17 @@ app.use(errorHandler);
 app.use(cors({
     origin : "*"
 }));
+app.use((req, res, next) => {
+    const clientIp =
+      req.headers['x-forwarded-for'] ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress ||
+      req.connection.socket.remoteAddress;
+  
+    console.log('Client IP Address:', clientIp);
+    
+    next();
+});
 
 
 app.get("/BJYJ",(req,res) => {
