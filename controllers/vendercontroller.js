@@ -997,8 +997,7 @@ exports.filterforvender = async(req,res)=>{
 };
 
 // History filter get by admin id
-exports.Venderhistoryfilter = async ( req , res ) => {
-  console.log("came here")
+exports.Venderhistoryfilterforadmin = async ( req , res ) => {
   try {
     let id = req.body.venderId;
   let vender = await Vender.findByPk(id);
@@ -1015,6 +1014,49 @@ exports.Venderhistoryfilter = async ( req , res ) => {
   if(admin_id !== "0"){
     whereConditions.ADMIN_ID = admin_id;
   }
+  if(action_type !== "0"){
+    whereConditions.ACTION_TYPE = action_type;
+  }
+  if(datefrom !== "0" && dateto !== "0" ){
+    const createdAtFilter = {
+      [Op.gte]: new Date(datefrom),
+      [Op.lte]: new Date(dateto + " 23:59:59"),
+    };
+    whereConditions.CREATED_ON = createdAtFilter;
+  }
+  console.log(whereConditions)
+
+  const venderHistory = await VenderHistory.findAndCountAll( {
+    where: whereConditions,
+    order: [['createdAt', 'DESC']],
+    offset: (page - 1) * 50, 
+    limit: 50, 
+  });
+
+  res.status(200).json({success : venderHistory});
+    
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({error : "filter route is not functioning"});
+  }
+}
+
+// History filter get by vender auth
+exports.Venderhistoryfilterforvenderwithauth = async ( req , res ) => {
+  try {
+  let id = req.body.venderId;
+  let vender = await Vender.findByPk(id);
+  const state_code = vender.ASSIGN_STATE_CODE;
+  const admin_id = id ;
+  const action_type = req.params["action_type"];
+  const datefrom = req.params["datefrom"];
+  const dateto = req.params["dateto"];
+  const page = req.params['page'] || 1;
+
+  const whereConditions = {};
+  whereConditions.STATE_CODE = state_code;
+  whereConditions.VENDER_ID = admin_id;
+
   if(action_type !== "0"){
     whereConditions.ACTION_TYPE = action_type;
   }

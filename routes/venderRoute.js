@@ -22,7 +22,8 @@ const {
     getStatisticsbyvenderid,
     getStatisticsbyvenderauth,
     filterforvender,
-    Venderhistoryfilter,
+    Venderhistoryfilterforadmin,
+    Venderhistoryfilterforvenderwithauth,
 } = require("../controllers/vendercontroller");
 
 Venderroute.post("/createVender" , createVender);
@@ -59,8 +60,9 @@ Venderroute.post("/getStatisticsbyvenderauth/:state_code" , authMiddleware , get
 
 Venderroute.post("/filterforvender/:key/:value/:status/:role/:loginstatus/:page" , authMiddleware , filterforvender );
 
-Venderroute.post("/Venderhistoryfilter/:admin_id/:action_type/:datefrom/:dateto/:page" , authMiddleware , Venderhistoryfilter);
+Venderroute.post("/Venderhistoryfilter/:admin_id/:action_type/:datefrom/:dateto/:page" , authMiddleware , Venderhistoryfilterforadmin);
 
+Venderroute.post("/Venderhistoryfilterforvenderwithauth/:action_type/:datefrom/:dateto/:page" , authMiddleware , Venderhistoryfilterforvenderwithauth);
 
 
 module.exports = { Venderroute }
