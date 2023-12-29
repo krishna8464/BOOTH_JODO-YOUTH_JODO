@@ -373,9 +373,37 @@ exports.getvenderHistorybyauth = async (req, res) => {
 
 // getoneVenderbyid controlelr is used to get vender by id
 exports.getoneVenderbyid = async (req, res) => {
-  let ID = req.params["id"];
+  let VENDER_ID = req.params["id"];
   try {
-    let vender = await Vender.findByPk(ID);
+    let vender = await Vender.findByPk(VENDER_ID);
+    let state_code = vender.ASSIGN_STATE_CODE
+
+    const VERIFICATION_PASS_COUNT = await BJYJMEMBER.count({
+      where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_PASS", state_code: state_code },
+    });
+
+    // Count verification failed records
+    const VERIFICATION_FAILED_COUNT = await BJYJMEMBER.count({
+      where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_FAILED", state_code: state_code },
+    });
+
+    // Count total verified records
+    const TOTAL_VERIFIED_COUNT = await BJYJMEMBER.count({
+      where: {
+        [Op.or]: [{ VENDER_STATUS: "VERIFICATION_PASS" }, { VENDER_STATUS: "VERIFICATION_FAILED" }],
+        state_code: state_code,
+        VENDER_ID,
+      },
+    });
+
+    // Count verification pending records
+    const VERIFICATION_PENDING_COUNT = await BJYJMEMBER.count({
+      where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_PENDING", state_code: state_code },
+    });
+    vender.dataValues.VERIFICATION_PASS_COUNT = VERIFICATION_PASS_COUNT
+    vender.dataValues.VERIFICATION_FAILED_COUNT = VERIFICATION_FAILED_COUNT
+    vender.dataValues.TOTAL_VERIFIED_COUNT = TOTAL_VERIFIED_COUNT
+    vender.dataValues.VERIFICATION_PENDING_COUNT = VERIFICATION_PENDING_COUNT
     res.status(200).json({success : vender});
   } catch (error) {
     console.log(error)
@@ -385,13 +413,41 @@ exports.getoneVenderbyid = async (req, res) => {
 
 //// getoneVenderbyauth controlelr is used to get vender by auth
 exports.getoneVenderbyauth = async (req, res) => {
-  let ID = req.body.venderId;
+  let VENDER_ID = req.body.venderId;
   try {
-    let vender = await Vender.findByPk(ID);
+    let vender = await Vender.findByPk(VENDER_ID);
+    let state_code = vender.ASSIGN_STATE_CODE
+
+    const VERIFICATION_PASS_COUNT = await BJYJMEMBER.count({
+      where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_PASS", state_code: state_code },
+    });
+
+    // Count verification failed records
+    const VERIFICATION_FAILED_COUNT = await BJYJMEMBER.count({
+      where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_FAILED", state_code: state_code },
+    });
+
+    // Count total verified records
+    const TOTAL_VERIFIED_COUNT = await BJYJMEMBER.count({
+      where: {
+        [Op.or]: [{ VENDER_STATUS: "VERIFICATION_PASS" }, { VENDER_STATUS: "VERIFICATION_FAILED" }],
+        state_code: state_code,
+        VENDER_ID,
+      },
+    });
+
+    // Count verification pending records
+    const VERIFICATION_PENDING_COUNT = await BJYJMEMBER.count({
+      where: { VENDER_ID, VENDER_STATUS: "VERIFICATION_PENDING", state_code: state_code },
+    });
+    vender.dataValues.VERIFICATION_PASS_COUNT = VERIFICATION_PASS_COUNT
+    vender.dataValues.VERIFICATION_FAILED_COUNT = VERIFICATION_FAILED_COUNT
+    vender.dataValues.TOTAL_VERIFIED_COUNT = TOTAL_VERIFIED_COUNT
+    vender.dataValues.VERIFICATION_PENDING_COUNT = VERIFICATION_PENDING_COUNT
     res.status(200).json({success : vender});
   } catch (error) {
     console.log(error)
-    res.status(500).json({ error: "vender getonebyauth route is not functioning" });
+    res.status(500).json({ error: "vender getonebyid route is not functioning" });
   }
 };
 
