@@ -867,7 +867,12 @@ exports.filterforvender = async(req,res)=>{
   const page = req.params['page'] || 1;
 
  const whereConditions = {};
- whereConditions.ASSIGN_STATE_CODE = state_code;
+//  whereConditions.ASSIGN_STATE_CODE = state_code;
+
+ whereConditions[Op.or] = [
+  { ROLE: 'Admin' },
+  { ROLE: 'Vender', ASSIGN_STATE_CODE: state_code },
+];
 
  if(status != "0"){
   whereConditions.STATUS = status;
