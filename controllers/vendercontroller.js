@@ -61,7 +61,7 @@ exports.getOTP = async (req, res) => {
         if (!body[0]) {
           res.status(404).json({ error: "Vender not found" }); // 404 Not Found
         } else {
-          let binaryData = `[{"V":"1.5","ORG":"IYC","SESSION_ID":"cMjRQINXQPv9IydiTGFLHOAfIjOW4rhv2zfPWzrLBkhzXjscBO4xBDs9Up0IIwAi","DEVICE_ID":"cdbbed0a-1989-4fa7-859f-fc47dab6992a","USER_ID":"LTUveILGz+jqFIeLu3sD3g==","LATITUDE":"","LONGITUDE":"","STATE_CODE":"","MOBILE":${number}}]`;
+          let binaryData = `[{"V":"1.6","ORG":"IYC","SESSION_ID":"cMjRQINXQPv9IydiTGFLHOAfIjOW4rhv2zfPWzrLBkhzXjscBO4xBDs9Up0IIwAi","DEVICE_ID":"cdbbed0a-1989-4fa7-859f-fc47dab6992a","USER_ID":"LTUveILGz+jqFIeLu3sD3g==","LATITUDE":"","LONGITUDE":"","STATE_CODE":"","MOBILE":${number}}]`;
           const base64Encoded = Buffer.from(binaryData).toString("base64");
           // console.log(base64Encoded);
   
@@ -106,10 +106,10 @@ exports.validateOTP = async (req, res) => {
       let id = venderData ? venderData.ID : null;
   
       if (!venderData) {
-        return res.status(404).json({ error: "Vender not found" }); // 404 Not Found
+        return res.status(404).json({ error: "Vender not found" }); 
       }
   
-      let binaryData = `[{"V":"1.5","ORG":"IYC","SESSION_ID":"cMjRQINXQPv9IydiTGFLHOAfIjOW4rhv2zfPWzrLBkhzXjscBO4xBDs9Up0IIwAi","DEVICE_ID":"cdbbed0a-1989-4fa7-859f-fc47dab6992a","USER_ID":"LTUveILGz+jqFIeLu3sD3g==","LATITUDE":"3.989234383434343","LONGITUDE":"9.034342423423","STATE_CODE":"KA","MOBILE":${number},"OTP":${otp}}]`;
+      let binaryData = `[{"V":"1.6","ORG":"IYC","SESSION_ID":"cMjRQINXQPv9IydiTGFLHOAfIjOW4rhv2zfPWzrLBkhzXjscBO4xBDs9Up0IIwAi","DEVICE_ID":"cdbbed0a-1989-4fa7-859f-fc47dab6992a","USER_ID":"LTUveILGz+jqFIeLu3sD3g==","LATITUDE":"3.989234383434343","LONGITUDE":"9.034342423423","STATE_CODE":"KA","MOBILE":${number},"OTP":${otp}}]`;
       const base64Encoded = Buffer.from(binaryData).toString("base64");
   
       const url = "https://api.ycea.in/ycea/ycea-api/service/iyc/api/v1.0/auth/validateOTP.php";

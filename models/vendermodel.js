@@ -85,7 +85,7 @@ const Vender = sequelize.define("VENDER_TABLE", {
     indexes: [
         { fields: ['MOBILE'] },
         { fields: ['EMAIL'] },
-        { fields : ['ASSIGN_STATE_CODE']}
+        { fields : ['ASSIGN_STATE_CODE']},
       ],
   });
 
